@@ -1,30 +1,28 @@
-const express = require('express')
-const cors = require('cors')
+const { ApolloServer } = require('@apollo/server')
+const { startStandaloneServer } = require('@apollo/server/standalone')
 require('dotenv').config()
 
 const mongoose = require('mongoose')
+const typeDefs = require('./graphql/schema')
+const resolvers = require('./graphql/resolvers')
 
-const app = express()
-const PORT = process.env.PORT || 5000
+const PORT = process.env.PORT || 5001
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/thehood'
 
-app.use(cors())
-app.use(express.json())
-
-const reportsRoutes = require('./routes/reports')
-
-// MongoDB Connection
 mongoose
   .connect(MONGO_URI)
   .then(() => console.log('MongoDB connected to thehood'))
   .catch(err => console.error('MongoDB connection error:', err))
 
-app.use('/api/reports', reportsRoutes)
-
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Gotham City Backend Online' })
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+  context: async ({ req }) => ({ req }),
 })
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`)
+startStandaloneServer(server, {
+  context: async ({ req }) => ({ req }),
+  listen: { port: PORT },
+}).then(({ url }) => {
+  console.log(`Server is running at ${url}`)
 })

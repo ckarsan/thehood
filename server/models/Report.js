@@ -2,14 +2,19 @@ const mongoose = require('mongoose')
 
 const ReportSchema = new mongoose.Schema(
   {
+    referenceNumber: { type: String, required: true, unique: true },
     originalDescription: { type: String, required: true },
-    city: { type: String, required: true }, // Gotham, Smallville, etc.
-    location: { type: String, required: true }, // Ideally coordinates, but string for MVP
+    city: { type: String, required: true },
+    location: { type: String, required: true },
     images: [{ type: String }],
     civilianContact: {
       name: String,
       phone: String,
       email: String,
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
     },
     status: {
       type: String,
@@ -21,13 +26,20 @@ const ReportSchema = new mongoose.Schema(
       cleanedText: String,
       severity: String,
       duplicateConfidence: Number,
-      thoughts: String, // OPIK logs
+      thoughts: String,
     },
     resolution: {
-      completedBy: String,
+      completedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
       notes: String,
       timestamp: Date,
     },
+    notes: [
+      {
+        text: String,
+        author: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true }
 )
