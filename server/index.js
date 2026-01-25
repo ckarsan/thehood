@@ -1,5 +1,8 @@
 const { ApolloServer } = require('@apollo/server')
-const { startStandaloneServer } = require('@apollo/server/standalone')
+const { expressMiddleware } = require('@apollo/server/express4')
+const express = require('express')
+const cors = require('cors')
+const path = require('path')
 require('dotenv').config()
 
 const mongoose = require('mongoose')
@@ -14,15 +17,37 @@ mongoose
   .then(() => console.log('MongoDB connected to thehood'))
   .catch(err => console.error('MongoDB connection error:', err))
 
-const server = new ApolloServer({
-  typeDefs,
-  resolvers,
-  context: async ({ req }) => ({ req }),
-})
+const startServer = async () => {
+  const app = express()
+  const server = new ApolloServer({
+    typeDefs,
+    resolvers,
+  })
 
-startStandaloneServer(server, {
-  context: async ({ req }) => ({ req }),
-  listen: { port: PORT },
-}).then(({ url }) => {
-  console.log(`Server is running at ${url}`)
-})
+  await server.start()
+
+  app.use(cors())
+  app.use(express.json())
+
+  app.use(
+    '/graphql',
+    expressMiddleware(server, {
+      context: async ({ req }) => ({ req }),
+    })
+  )
+
+  // Serve static files from the client build directory
+  app.use(express.static(path.join(__dirname, '../client/dist')))
+
+  // Handle client-side routing by returning index.html for all other requests
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'))
+  })
+
+  app.listen(PORT, () => {
+    console.log(`Server is running at http://localhost:${PORT}`)
+    console.log(`GraphQL endpoint: http://localhost:${PORT}/graphql`)
+  })
+}
+
+startServer()
