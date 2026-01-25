@@ -99,7 +99,7 @@ const resolvers = {
       context
     ) => {
       const user = getUserFromToken(context)
-      if (!user) throw new Error('Not authenticated')
+      // Allow anonymous reporting - user ID will be null if not logged in
 
       const aiResult = await processReport(description, location, city)
       const referenceNumber = generateReferenceNumber(city, description)
@@ -111,7 +111,7 @@ const resolvers = {
         location,
         civilianContact,
         images,
-        createdBy: user.userId,
+        createdBy: user ? user.userId : null,
         department: aiResult.department,
         status: 'Not Started',
         aiAnalysis: {

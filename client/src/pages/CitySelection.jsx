@@ -72,7 +72,7 @@ export default function CitySelection() {
           style={{
             fontSize: 'clamp(1rem, 2vw, 1.25rem)',
             color: colors.textSecondary,
-            marginBottom: 0,
+            marginBottom: spacing.xl,
             lineHeight: 1.7,
           }}
         >

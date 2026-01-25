@@ -187,7 +187,7 @@ export default function UserDashboard() {
             style={{ color: colors.text }}
           />
         </Link>
-        <div>
+        <Space size="middle" style={{ display: 'flex', alignItems: 'center' }}>
           <Title
             level={3}
             style={{
@@ -198,10 +198,10 @@ export default function UserDashboard() {
           >
             My Reports
           </Title>
-          <Text style={{ color: colors.textSecondary, fontSize: '0.9rem' }}>
-            {cityId?.toUpperCase()}
+          <Text style={{ color: colors.textSecondary, fontSize: '1.1rem', fontWeight: '500' }}>
+            ({cityId?.toUpperCase()})
           </Text>
-        </div>
+        </Space>
       </Header>
       <Content style={{ padding: spacing.xl }}>
         <Card
