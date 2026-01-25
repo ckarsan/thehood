@@ -1,13 +1,19 @@
-const { ApolloServer } = require('@apollo/server')
-const { expressMiddleware } = require('@as-integrations/express5')
-const express = require('express')
-const cors = require('cors')
-const path = require('path')
-require('dotenv').config()
+import { ApolloServer } from '@apollo/server'
+import { expressMiddleware } from '@as-integrations/express5'
+import express from 'express'
+import cors from 'cors'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import dotenv from 'dotenv'
+import mongoose from 'mongoose'
 
-const mongoose = require('mongoose')
-const typeDefs = require('./graphql/schema')
-const resolvers = require('./graphql/resolvers')
+import typeDefs from './graphql/schema.js'
+import resolvers from './graphql/resolvers.js'
+
+dotenv.config()
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 const PORT = process.env.PORT || 5001
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/thehood'
@@ -40,7 +46,7 @@ const startServer = async () => {
   app.use(express.static(path.join(__dirname, '../client/dist')))
 
   // Handle client-side routing by returning index.html for all other requests
-  app.get('*', (req, res) => {
+  app.get(/(.*)/, (req, res) => {
     res.sendFile(path.join(__dirname, '../client/dist/index.html'))
   })
 

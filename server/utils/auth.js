@@ -1,25 +1,25 @@
-const jwt = require('jsonwebtoken')
-const bcrypt = require('bcryptjs')
+import jwt from 'jsonwebtoken'
+import bcrypt from 'bcryptjs'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'thehood-secret-key'
 
-const hashPassword = async password => {
+export const hashPassword = async password => {
   return await bcrypt.hash(password, 10)
 }
 
-const comparePassword = async (password, hashedPassword) => {
+export const comparePassword = async (password, hashedPassword) => {
   return await bcrypt.compare(password, hashedPassword)
 }
 
-const generateToken = (userId, role) => {
+export const generateToken = (userId, role) => {
   return jwt.sign({ userId, role }, JWT_SECRET, { expiresIn: '7d' })
 }
 
-const verifyToken = token => {
+export const verifyToken = token => {
   return jwt.verify(token, JWT_SECRET)
 }
 
-const getUserFromToken = context => {
+export const getUserFromToken = context => {
   const authHeader = context.req.headers.authorization
   if (!authHeader) return null
 
@@ -29,12 +29,4 @@ const getUserFromToken = context => {
   } catch (err) {
     return null
   }
-}
-
-module.exports = {
-  hashPassword,
-  comparePassword,
-  generateToken,
-  verifyToken,
-  getUserFromToken,
 }

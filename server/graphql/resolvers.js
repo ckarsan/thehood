@@ -1,12 +1,12 @@
-const User = require('../models/User')
-const Report = require('../models/Report')
-const { processReport } = require('../services/aiService')
-const {
+import User from '../models/User.js'
+import Report from '../models/Report.js'
+import { processReport } from '../services/aiService.js'
+import {
   hashPassword,
   comparePassword,
   generateToken,
   getUserFromToken,
-} = require('../utils/auth')
+} from '../utils/auth.js'
 
 const generateReferenceNumber = (city, description) => {
   const cityCode = city.slice(0, 4).toUpperCase()
@@ -195,4 +195,4 @@ const resolvers = {
   },
 }
 
-module.exports = resolvers
+export default resolvers

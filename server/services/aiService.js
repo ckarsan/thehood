@@ -1,5 +1,5 @@
-const axios = require('axios')
-const { Opik } = require('opik')
+import axios from 'axios'
+import { Opik } from 'opik'
 
 // Initialize Opik Client
 // Ensure OPIK_API_KEY is set in .env for real logging
@@ -8,7 +8,7 @@ const opikClient = new Opik()
 // Default to a local Ollama instance or similar
 const LLM_API_URL = process.env.LLM_API_URL || 'http://localhost:11434/api/generate'
 
-async function processReport(description, location, city) {
+export async function processReport(description, location, city) {
   const prompt = `
     You are an AI assistant for the ${city} City Council. 
     Your task is to process a citizen's report about a community issue.
@@ -87,5 +87,3 @@ async function processReport(description, location, city) {
     return mockResult
   }
 }
-
-module.exports = { processReport }
