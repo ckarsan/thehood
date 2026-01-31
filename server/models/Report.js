@@ -18,8 +18,8 @@ const ReportSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['Not Started', 'Assigned', 'Completed'],
-      default: 'Not Started',
+      enum: ['submitted', 'in-review', 'assigned', 'resolved'],
+      default: 'submitted',
     },
     department: { type: String, default: 'Unassigned' },
     aiAnalysis: {

@@ -18,7 +18,7 @@ export async function processReport(description, location, city) {
     City: "${city}"
 
     1. Clean the text: Remove any profanity or personally identifiable information (PII) if present, but keep the core issue description clear.
-    2. Classify the Department: Choose from 'Roads', 'Sanitation', 'Parks', 'Public Safety', 'Housing', or 'Other'.
+    2. Classify the Department: Choose from 'Roads', 'Sanitation', 'Parks', 'Public Safety', 'Housing', 'Unassigned', or 'Other'.
     3. Determine Severity: 'Low', 'Medium', 'High', 'Critical'.
     4. Provide a thought process (OPIK) explaining your reasoning.
 

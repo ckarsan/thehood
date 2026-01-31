@@ -113,7 +113,7 @@ const resolvers = {
         images,
         createdBy: user ? user.userId : null,
         department: aiResult.department,
-        status: 'Not Started',
+        status: 'submitted',
         aiAnalysis: {
           cleanedText: aiResult.cleanedText,
           severity: aiResult.severity,
@@ -152,7 +152,7 @@ const resolvers = {
         id,
         {
           $set: {
-            status: 'Completed',
+            status: 'resolved',
             resolution: {
               completedBy: user.userId,
               notes,

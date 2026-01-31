@@ -104,13 +104,13 @@ export default function CouncilDashboard() {
 
   const getStatusConfig = status => {
     switch (status) {
-      case 'Completed':
+      case 'resolved':
         return {
           color: colors.success,
           icon: <CheckCircleOutlined />,
           bg: `${colors.success}10`,
         }
-      case 'Assigned':
+      case 'assigned':
         return {
           color: colors.primary,
           icon: <ClockCircleOutlined />,
@@ -129,7 +129,7 @@ export default function CouncilDashboard() {
     const statusConfig = getStatusConfig(status)
 
     return (
-      <Col span={8}>
+      <Col span={6}>
         <Card
           title={
             <Space>
@@ -329,19 +329,24 @@ export default function CouncilDashboard() {
       <Content style={{ padding: spacing.lg }}>
         <Row gutter={spacing.lg}>
           <KanbanColumn
-            title="Not Started"
-            status="Not Started"
-            items={reports.filter(r => r.status === 'Not Started')}
+            title="Submitted"
+            status="submitted"
+            items={reports.filter(r => r.status === 'submitted')}
+          />
+          <KanbanColumn
+            title="In Review"
+            status="in-review"
+            items={reports.filter(r => r.status === 'in-review')}
           />
           <KanbanColumn
             title="Assigned"
-            status="Assigned"
-            items={reports.filter(r => r.status === 'Assigned')}
+            status="assigned"
+            items={reports.filter(r => r.status === 'assigned')}
           />
           <KanbanColumn
-            title="Completed"
-            status="Completed"
-            items={reports.filter(r => r.status === 'Completed')}
+            title="Resolved"
+            status="resolved"
+            items={reports.filter(r => r.status === 'resolved')}
           />
         </Row>
       </Content>
@@ -360,14 +365,28 @@ export default function CouncilDashboard() {
           setNoteInput('')
         }}
         footer={
-          selectedReport?.status === 'Completed' ? null : (
+          selectedReport?.status === 'resolved' ? null : (
             <Space>
-              {selectedReport?.status === 'Not Started' && (
+              {selectedReport?.status === 'submitted' && (
                 <Button
                   onClick={() =>
                     handleStatusUpdate(
                       selectedReport.id,
-                      'Assigned',
+                      'in-review',
+                      selectedReport.department
+                    )
+                  }
+                  style={{ borderRadius: borderRadius.md }}
+                >
+                  Review
+                </Button>
+              )}
+              {selectedReport?.status === 'in-review' && (
+                <Button
+                  onClick={() =>
+                    handleStatusUpdate(
+                      selectedReport.id,
+                      'assigned',
                       selectedReport.department
                     )
                   }
@@ -376,7 +395,7 @@ export default function CouncilDashboard() {
                   Assign
                 </Button>
               )}
-              {selectedReport?.status === 'Assigned' && (
+              {selectedReport?.status === 'assigned' && (
                 <Button
                   type="primary"
                   onClick={() => setResolutionNotes(prev => prev || '')}
@@ -501,7 +520,7 @@ export default function CouncilDashboard() {
               </div>
             )}
 
-            {selectedReport.status !== 'Completed' && (
+            {selectedReport.status !== 'resolved' && (
               <div
                 style={{
                   marginTop: spacing.lg,

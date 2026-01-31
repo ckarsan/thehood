@@ -60,9 +60,9 @@ export default function UserDashboard() {
 
   const getStatusConfig = status => {
     switch (status) {
-      case 'Completed':
+      case 'resolved':
         return { color: colors.success, icon: <CheckCircleOutlined /> }
-      case 'Assigned':
+      case 'assigned':
         return { color: colors.primary, icon: <ClockCircleOutlined /> }
       default:
         return { color: colors.textSecondary, icon: <ClockCircleOutlined /> }
