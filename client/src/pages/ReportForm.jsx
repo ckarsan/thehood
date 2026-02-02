@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Form,
   Input,
@@ -28,21 +28,32 @@ export default function ReportForm() {
   const [form] = Form.useForm()
   const { cityId } = useParams()
   const navigate = useNavigate()
-  const token = localStorage.getItem('token')
+
   const { colors, spacing, borderRadius } = useTheme()
 
-  const [showSuccessModal, setShowSuccessModal] = useState(false)
+
+  useEffect(() => {
+    const userStr = localStorage.getItem('user')
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr)
+        form.setFieldsValue({
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+        })
+      } catch (e) {
+        // Ignore parsing errors
+      }
+    }
+  }, [form])
 
   const [createReport, { loading }] = useMutation(CREATE_REPORT_MUTATION, {
     onCompleted: () => {
-      if (token) {
-        message.success(
-          'Report submitted successfully! The Council will review it.'
-        )
-        navigate(`/city/${cityId}/my-reports`)
-      } else {
-        setShowSuccessModal(true)
-      }
+      message.success(
+        'Report submitted successfully! The Council will review it.'
+      )
+      navigate(`/city/${cityId}/my-reports`)
     },
     onError: err => {
       message.error(err.message)
@@ -50,7 +61,6 @@ export default function ReportForm() {
   })
 
   const onFinish = async values => {
-    // allow anonymous reporting
     createReport({
       variables: {
         description: values.description,
@@ -277,77 +287,7 @@ export default function ReportForm() {
           </Form.Item>
         </Form>
       </Card>
-      <Modal
-        open={showSuccessModal}
-        footer={null}
-        closable={false}
-        centered
-        styles={{
-          content: {
-            background: colors.surface,
-            borderRadius: borderRadius.xl,
-            textAlign: 'center',
-            padding: spacing.xl,
-          },
-        }}
-      >
-        <div
-          style={{
-            fontSize: '3rem',
-            marginBottom: spacing.md,
-            color: colors.success,
-          }}
-        >
-          🎉
-        </div>
-        <Title level={3} style={{ color: colors.text, marginBottom: spacing.md }}>
-          Report Received!
-        </Title>
-        <Paragraph style={{ color: colors.textSecondary, marginBottom: spacing.xl }}>
-          Thank you for being a good citizen. Your report has been sent to the {cityId?.toUpperCase()} Council.
-        </Paragraph>
-        <div
-          style={{
-            background: `${colors.primary}10`,
-            padding: spacing.lg,
-            borderRadius: borderRadius.lg,
-            marginBottom: spacing.xl,
-          }}
-        >
-          <Text strong style={{ color: colors.primary, display: 'block', marginBottom: spacing.sm }}>
-            Want to track status updates?
-          </Text>
-          <Text style={{ color: colors.textSecondary }}>
-            Create a free account to follow your report's progress and communicate with the council.
-          </Text>
-        </div>
-        <Space direction="vertical" style={{ width: '100%' }} size={spacing.md}>
-          <Button
-            type="primary"
-            size="large"
-            block
-            onClick={() => navigate(`/city/${cityId}/auth`)}
-            style={{
-              height: '48px',
-              borderRadius: borderRadius.lg,
-              background: colors.primary,
-            }}
-          >
-            Create Account
-          </Button>
-          <Button
-            type="text"
-            onClick={() => {
-              setShowSuccessModal(false)
-              form.resetFields()
-              navigate(`/city/${cityId}`)
-            }}
-            style={{ color: colors.textSecondary }}
-          >
-            No thanks, return home
-          </Button>
-        </Space>
-      </Modal>
+
     </Content >
   )
 }

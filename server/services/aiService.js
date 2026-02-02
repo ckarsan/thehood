@@ -1,12 +1,12 @@
-import axios from 'axios'
+import Groq from 'groq-sdk'
 import { Opik } from 'opik'
 
 // Initialize Opik Client
-// Ensure OPIK_API_KEY is set in .env for real logging
 const opikClient = new Opik()
 
-// Default to a local Ollama instance or similar
-const LLM_API_URL = process.env.LLM_API_URL || 'http://localhost:11434/api/generate'
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY || 'gsk_placeholder_for_local_dev',
+})
 
 export async function processReport(description, location, city) {
   const prompt = `
@@ -20,7 +20,7 @@ export async function processReport(description, location, city) {
     1. Clean the text: Remove any profanity or personally identifiable information (PII) if present, but keep the core issue description clear.
     2. Classify the Department: Choose from 'Roads', 'Sanitation', 'Parks', 'Public Safety', 'Housing', 'Unassigned', or 'Other'.
     3. Determine Severity: 'Low', 'Medium', 'High', 'Critical'.
-    4. Provide a thought process (OPIK) explaining your reasoning.
+    4. Provide a thought process explaining your reasoning.
 
     Return the response in strictly valid JSON format:
     {
@@ -33,7 +33,7 @@ export async function processReport(description, location, city) {
 
   // Start OPIK Trace
   const trace = opikClient.trace({
-    name: 'Process Citizen Report',
+    name: 'Process Citizen Report (Groq)',
     input: { description, location, city },
   })
 
@@ -44,23 +44,33 @@ export async function processReport(description, location, city) {
       type: 'llm',
     })
 
-    // Attempt to call Local LLM
-    const response = await axios.post(LLM_API_URL, {
-      model: 'llama3', 
-      prompt: prompt,
-      stream: false,
-      format: 'json',
+    if (!process.env.GROQ_API_KEY) {
+      throw new Error('GROQ_API_KEY is not set')
+    }
+
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a helpful city services AI. Output valid JSON only.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      model: 'llama3-70b-8192', // Fast and reliable
+      temperature: 0.3,
+      response_format: { type: 'json_object' },
     })
 
+    const responseContent = completion.choices[0]?.message?.content
     let result
+
     try {
-      if (typeof response.data.response === 'string') {
-          result = JSON.parse(response.data.response)
-      } else {
-        result = response.data
-      }
+      result = JSON.parse(responseContent)
     } catch (e) {
-      console.error('Failed to parse LLM JSON:', e)
+      console.error('Failed to parse Groq JSON:', e)
       throw new Error('Invalid LLM response')
     }
 
@@ -70,19 +80,19 @@ export async function processReport(description, location, city) {
     return result
   } catch (error) {
     console.warn(
-      'Local LLM unavailable or error. Using mock AI response.',
+      'Groq AI unavailable or error. Using mock AI response.',
       error.message
     )
-    
+
     const mockResult = {
-      cleanedText: description, 
+      cleanedText: description,
       department: 'Unassigned',
       severity: 'Medium',
-      thoughts: `System: Local LLM unavailable. Defaulting to raw input. Error: ${error.message}`,
+      thoughts: `System: AI Service Error. Defaulting to raw input. Error: ${error.message}`,
     }
 
     // Still end the trace even if error/mock
-    trace.end({ output: mockResult, tags: ['mocked'] })
+    trace.end({ output: mockResult, tags: ['mocked', 'error'] })
 
     return mockResult
   }

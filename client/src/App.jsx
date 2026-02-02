@@ -178,8 +178,19 @@ function App() {
           <Routes>
             <Route path="/" element={<CitySelection />} />
             <Route path="/city/:cityId" element={<CityLanding />} />
-            <Route path="/city/:cityId/report" element={<ReportForm />} />
-            <Route path="/city/:cityId/auth" element={<AuthPage />} />
+            <Route
+              path="/city/:cityId/report"
+              element={
+                <ProtectedRoute>
+                  <ReportForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/city/:cityId/auth" element={<AuthPage type="civilian" />} />
+            <Route
+              path="/city/:cityId/council/auth"
+              element={<AuthPage type="council" />}
+            />
             <Route
               path="/city/:cityId/my-reports"
               element={

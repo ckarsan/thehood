@@ -25,8 +25,9 @@ import {
   UserOutlined,
   CommentOutlined,
   SafetyOutlined,
+  LogoutOutlined,
 } from '@ant-design/icons'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@apollo/client'
 import {
   GET_REPORTS,
@@ -46,8 +47,22 @@ export default function CouncilDashboard() {
   const [resolutionNotes, setResolutionNotes] = useState('')
   const [noteInput, setNoteInput] = useState('')
   const { cityId } = useParams()
+  const navigate = useNavigate()
   const { colors, spacing, borderRadius } = useTheme()
   const cityName = cityId?.charAt(0).toUpperCase() + cityId.slice(1)
+
+  // Redirect if not council
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  if (user.role !== 'council') {
+    navigate(`/city/${cityId}/council/auth`)
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    message.success('Logged out successfully')
+    navigate(`/city/${cityId}`)
+  }
 
   const { data, refetch } = useQuery(GET_REPORTS, {
     variables: { city: cityId?.toLowerCase() },
@@ -323,6 +338,14 @@ export default function CouncilDashboard() {
             style={{ borderRadius: borderRadius.md }}
           >
             Refresh
+          </Button>
+          <Button
+            danger
+            icon={<LogoutOutlined />}
+            onClick={handleLogout}
+            style={{ borderRadius: borderRadius.md }}
+          >
+            Logout
           </Button>
         </Space>
       </Header>
@@ -815,6 +838,6 @@ export default function CouncilDashboard() {
           </div>
         )}
       </Modal>
-    </Layout>
+    </Layout >
   )
 }

@@ -202,6 +202,15 @@ export default function UserDashboard() {
             ({cityId?.toUpperCase()})
           </Text>
         </Space>
+        <Link to={`/city/${cityId}/report`} style={{ marginLeft: 'auto' }}>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            style={{ borderRadius: borderRadius.md }}
+          >
+            New Report
+          </Button>
+        </Link>
       </Header>
       <Content style={{ padding: spacing.xl }}>
         <Card
@@ -385,7 +394,7 @@ export default function UserDashboard() {
                 </Paragraph>
               </div>
 
-              {selectedReport.aiAnalysis?.thoughts && (
+              {/* {selectedReport.aiAnalysis?.thoughts && (
                 <div
                   style={{
                     padding: spacing.md,
@@ -415,7 +424,7 @@ export default function UserDashboard() {
                     {selectedReport.aiAnalysis.thoughts}
                   </Paragraph>
                 </div>
-              )}
+              )} */}
 
               {selectedReport.resolution && (
                 <div

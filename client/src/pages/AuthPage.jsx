@@ -22,7 +22,7 @@ import { useTheme } from '../contexts/ThemeContext.jsx'
 
 const { Title, Text } = Typography
 
-const AuthPage = () => {
+const AuthPage = ({ type = 'civilian' }) => {
   const navigate = useNavigate()
   const { cityId } = useParams()
   const { colors, spacing, borderRadius } = useTheme()
@@ -110,181 +110,227 @@ const AuthPage = () => {
               marginTop: 0,
             }}
           >
-            Welcome to {cityId?.charAt(0).toUpperCase() + cityId?.slice(1)}
+            {type === 'council'
+              ? 'Council Access'
+              : `Welcome to ${cityId?.charAt(0).toUpperCase() + cityId?.slice(1)}`}
           </Title>
           <Text style={{ color: colors.textSecondary, display: 'block' }}>
             Sign in to access your account
           </Text>
         </div>
 
-        <Tabs
-          defaultActiveKey="login"
-          centered
-          style={{ marginBottom: spacing.lg }}
-          items={[
-            {
-              key: 'login',
-              label: 'Login',
-              children: (
-                <Form
-                  name="login"
-                  onFinish={onLogin}
-                  layout="vertical"
-                  requiredMark={false}
-                >
-                  <Form.Item
-                    name="email"
-                    rules={[{ required: true, message: 'Email required' }]}
+        {type === 'council' ? (
+          <Form
+            name="login"
+            onFinish={onLogin}
+            layout="vertical"
+            requiredMark={false}
+          >
+            <Form.Item
+              name="email"
+              rules={[{ required: true, message: 'Email required' }]}
+            >
+              <Input
+                prefix={<MailOutlined style={{ color: colors.textSecondary }} />}
+                placeholder="Council Email"
+                size="large"
+                style={{
+                  borderRadius: borderRadius.md,
+                  background: colors.background,
+                }}
+              />
+            </Form.Item>
+            <Form.Item
+              name="password"
+              rules={[{ required: true, message: 'Password required' }]}
+            >
+              <Input.Password
+                prefix={<LockOutlined style={{ color: colors.textSecondary }} />}
+                placeholder="Password"
+                size="large"
+                style={{
+                  borderRadius: borderRadius.md,
+                  background: colors.background,
+                }}
+              />
+            </Form.Item>
+            <Form.Item style={{ marginBottom: 0 }}>
+              <Button
+                type="primary"
+                htmlType="submit"
+                block
+                loading={loginLoading}
+                size="large"
+                style={{
+                  height: '48px',
+                  fontWeight: '600',
+                  borderRadius: borderRadius.lg,
+                  background: colors.primary,
+                  borderColor: colors.primary,
+                }}
+              >
+                Login to Dashboard
+              </Button>
+            </Form.Item>
+          </Form>
+        ) : (
+          <Tabs
+            defaultActiveKey="login"
+            centered
+            style={{ marginBottom: spacing.lg }}
+            items={[
+              {
+                key: 'login',
+                label: 'Login',
+                children: (
+                  <Form
+                    name="login"
+                    onFinish={onLogin}
+                    layout="vertical"
+                    requiredMark={false}
                   >
-                    <Input
-                      prefix={
-                        <MailOutlined style={{ color: colors.textSecondary }} />
-                      }
-                      placeholder="Email"
-                      size="large"
-                      style={{
-                        borderRadius: borderRadius.md,
-                        background: colors.background,
-                      }}
-                    />
-                  </Form.Item>
-                  <Form.Item
-                    name="password"
-                    rules={[{ required: true, message: 'Password required' }]}
-                  >
-                    <Input.Password
-                      prefix={
-                        <LockOutlined style={{ color: colors.textSecondary }} />
-                      }
-                      placeholder="Password"
-                      size="large"
-                      style={{
-                        borderRadius: borderRadius.md,
-                        background: colors.background,
-                      }}
-                    />
-                  </Form.Item>
-                  <Form.Item style={{ marginBottom: 0 }}>
-                    <Button
-                      type="primary"
-                      htmlType="submit"
-                      block
-                      loading={loginLoading}
-                      size="large"
-                      style={{
-                        height: '48px',
-                        fontWeight: '600',
-                        borderRadius: borderRadius.lg,
-                        background: colors.primary,
-                        borderColor: colors.primary,
-                      }}
+                    <Form.Item
+                      name="email"
+                      rules={[{ required: true, message: 'Email required' }]}
                     >
-                      Login
-                    </Button>
-                  </Form.Item>
-                </Form>
-              ),
-            },
-            {
-              key: 'signup',
-              label: 'Sign Up',
-              children: (
-                <Form
-                  name="signup"
-                  onFinish={onSignup}
-                  layout="vertical"
-                  requiredMark={false}
-                >
-                  <Form.Item
-                    name="name"
-                    rules={[{ required: true, message: 'Name required' }]}
-                  >
-                    <Input
-                      prefix={
-                        <UserOutlined style={{ color: colors.textSecondary }} />
-                      }
-                      placeholder="Name"
-                      size="large"
-                      style={{
-                        borderRadius: borderRadius.md,
-                        background: colors.background,
-                      }}
-                    />
-                  </Form.Item>
-                  <Form.Item
-                    name="email"
-                    rules={[{ required: true, message: 'Email required' }]}
-                  >
-                    <Input
-                      prefix={
-                        <MailOutlined style={{ color: colors.textSecondary }} />
-                      }
-                      placeholder="Email"
-                      size="large"
-                      style={{
-                        borderRadius: borderRadius.md,
-                        background: colors.background,
-                      }}
-                    />
-                  </Form.Item>
-                  <Form.Item
-                    name="password"
-                    rules={[{ required: true, message: 'Password required' }]}
-                  >
-                    <Input.Password
-                      prefix={
-                        <LockOutlined style={{ color: colors.textSecondary }} />
-                      }
-                      placeholder="Password"
-                      size="large"
-                      style={{
-                        borderRadius: borderRadius.md,
-                        background: colors.background,
-                      }}
-                    />
-                  </Form.Item>
-                  <Form.Item
-                    name="role"
-                    rules={[{ required: true, message: 'Select role' }]}
-                  >
-                    <Select
-                      placeholder="I am a..."
-                      size="large"
-                      style={{
-                        borderRadius: borderRadius.md,
-                      }}
+                      <Input
+                        prefix={
+                          <MailOutlined style={{ color: colors.textSecondary }} />
+                        }
+                        placeholder="Email"
+                        size="large"
+                        style={{
+                          borderRadius: borderRadius.md,
+                          background: colors.background,
+                        }}
+                      />
+                    </Form.Item>
+                    <Form.Item
+                      name="password"
+                      rules={[{ required: true, message: 'Password required' }]}
                     >
-                      <Select.Option value="civilian">
-                        👤 Civilian
-                      </Select.Option>
-                      <Select.Option value="council">
-                        🏛️ Council Officer
-                      </Select.Option>
-                    </Select>
-                  </Form.Item>
-                  <Form.Item style={{ marginBottom: 0 }}>
-                    <Button
-                      type="primary"
-                      htmlType="submit"
-                      block
-                      loading={signupLoading}
-                      size="large"
-                      style={{
-                        height: '48px',
-                        fontWeight: '600',
-                        borderRadius: borderRadius.lg,
-                        background: colors.primary,
-                        borderColor: colors.primary,
-                      }}
+                      <Input.Password
+                        prefix={
+                          <LockOutlined style={{ color: colors.textSecondary }} />
+                        }
+                        placeholder="Password"
+                        size="large"
+                        style={{
+                          borderRadius: borderRadius.md,
+                          background: colors.background,
+                        }}
+                      />
+                    </Form.Item>
+                    <Form.Item style={{ marginBottom: 0 }}>
+                      <Button
+                        type="primary"
+                        htmlType="submit"
+                        block
+                        loading={loginLoading}
+                        size="large"
+                        style={{
+                          height: '48px',
+                          fontWeight: '600',
+                          borderRadius: borderRadius.lg,
+                          background: colors.primary,
+                          borderColor: colors.primary,
+                        }}
+                      >
+                        Login
+                      </Button>
+                    </Form.Item>
+                  </Form>
+                ),
+              },
+              {
+                key: 'signup',
+                label: 'Sign Up',
+                children: (
+                  <Form
+                    name="signup"
+                    onFinish={onSignup}
+                    layout="vertical"
+                    requiredMark={false}
+                  >
+                    <Form.Item
+                      name="name"
+                      rules={[{ required: true, message: 'Name required' }]}
                     >
-                      Create Account
-                    </Button>
-                  </Form.Item>
-                </Form>
-              ),
-            },
-          ]}
-        />
+                      <Input
+                        prefix={
+                          <UserOutlined style={{ color: colors.textSecondary }} />
+                        }
+                        placeholder="Name"
+                        size="large"
+                        style={{
+                          borderRadius: borderRadius.md,
+                          background: colors.background,
+                        }}
+                      />
+                    </Form.Item>
+                    <Form.Item
+                      name="email"
+                      rules={[{ required: true, message: 'Email required' }]}
+                    >
+                      <Input
+                        prefix={
+                          <MailOutlined style={{ color: colors.textSecondary }} />
+                        }
+                        placeholder="Email"
+                        size="large"
+                        style={{
+                          borderRadius: borderRadius.md,
+                          background: colors.background,
+                        }}
+                      />
+                    </Form.Item>
+                    <Form.Item
+                      name="password"
+                      rules={[{ required: true, message: 'Password required' }]}
+                    >
+                      <Input.Password
+                        prefix={
+                          <LockOutlined style={{ color: colors.textSecondary }} />
+                        }
+                        placeholder="Password"
+                        size="large"
+                        style={{
+                          borderRadius: borderRadius.md,
+                          background: colors.background,
+                        }}
+                      />
+                    </Form.Item>
+                    <Form.Item
+                      name="role"
+                      initialValue="civilian"
+                      hidden
+                    >
+                      <Input />
+                    </Form.Item>
+                    <Form.Item style={{ marginBottom: 0 }}>
+                      <Button
+                        type="primary"
+                        htmlType="submit"
+                        block
+                        loading={signupLoading}
+                        size="large"
+                        style={{
+                          height: '48px',
+                          fontWeight: '600',
+                          borderRadius: borderRadius.lg,
+                          background: colors.primary,
+                          borderColor: colors.primary,
+                        }}
+                      >
+                        Create Account
+                      </Button>
+                    </Form.Item>
+                  </Form>
+                ),
+              },
+            ]}
+          />
+        )}
 
         <div
           style={{
