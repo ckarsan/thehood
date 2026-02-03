@@ -38,28 +38,26 @@ export async function processReport(description, location, city) {
   })
 
   try {
-    const span = trace.span({
-      name: 'LLM Call',
-      input: { prompt },
-      type: 'llm',
-    })
+    const messages = [
+      {
+        role: 'system',
+        content: 'You are a helpful city services AI. Output valid JSON only.',
+      },
+      {
+        role: 'user',
+        content: prompt,
+      },
+    ]
+
+    const startTime = new Date()
 
     if (!process.env.GROQ_API_KEY) {
       throw new Error('GROQ_API_KEY is not set')
     }
 
     const completion = await groq.chat.completions.create({
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a helpful city services AI. Output valid JSON only.',
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      model: 'llama3-70b-8192', // Fast and reliable
+      messages,
+      model: 'llama-3.1-8b-instant', // Fast and reliable
       temperature: 0.3,
       response_format: { type: 'json_object' },
     })
@@ -74,8 +72,29 @@ export async function processReport(description, location, city) {
       throw new Error('Invalid LLM response')
     }
 
-    span.end({ output: result })
+    // Deferred Span Creation (to ensure output is logged correctly)
+    const span = trace.span({
+      name: 'LLM Call',
+      type: 'llm',
+      startTime, // Manually set start time
+      input: { messages },
+      output: {
+        response: responseContent, 
+      },
+      metadata: {
+        model: 'llama-3.1-8b-instant',
+        provider: 'groq',
+        usage: {
+          prompt_tokens: completion.usage?.prompt_tokens,
+          completion_tokens: completion.usage?.completion_tokens,
+          total_tokens: completion.usage?.total_tokens,
+        },
+      },
+    })
+    span.end() // Ends at current time
+
     trace.end({ output: result })
+    await opikClient.flush() // Force flush to ensure logs are sent
 
     return result
   } catch (error) {
