@@ -73,6 +73,8 @@ export const GET_REPORTS = gql`
       aiAnalysis {
         cleanedText
         severity
+        duplicateConfidence
+        possibleDuplicates
         thoughts
       }
       resolution {
@@ -117,6 +119,8 @@ export const GET_REPORT = gql`
       aiAnalysis {
         cleanedText
         severity
+        duplicateConfidence
+        possibleDuplicates
         thoughts
       }
       resolution {
@@ -209,6 +213,52 @@ export const ADD_REPORT_NOTE_MUTATION = gql`
         }
         createdAt
       }
+    }
+  }
+`
+
+export const GET_REPORT_BY_REFERENCE = gql`
+  query GetReportByReference($referenceNumber: String!) {
+    reportByReference(referenceNumber: $referenceNumber) {
+      id
+      referenceNumber
+      originalDescription
+      city
+      location
+      images
+      createdBy {
+        id
+        name
+        email
+      }
+      status
+      department
+      aiAnalysis {
+        cleanedText
+        severity
+        duplicateConfidence
+        possibleDuplicates
+        thoughts
+      }
+      resolution {
+        completedBy {
+          id
+          name
+        }
+        notes
+        timestamp
+      }
+      notes {
+        id
+        text
+        author {
+          id
+          name
+        }
+        createdAt
+      }
+      createdAt
+      updatedAt
     }
   }
 `

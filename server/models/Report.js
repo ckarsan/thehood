@@ -26,6 +26,7 @@ const ReportSchema = new mongoose.Schema(
       cleanedText: String,
       severity: String,
       duplicateConfidence: Number,
+      possibleDuplicates: [String],
       thoughts: String,
     },
     resolution: {

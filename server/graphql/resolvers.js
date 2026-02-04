@@ -53,6 +53,16 @@ const resolvers = {
         .populate('resolution.completedBy')
         .populate('notes.author')
     },
+
+    reportByReference: async (parent, { referenceNumber }, context) => {
+      const user = getUserFromToken(context)
+      if (!user) throw new Error('Not authenticated')
+
+      return await Report.findOne({ referenceNumber })
+        .populate('createdBy')
+        .populate('resolution.completedBy')
+        .populate('notes.author')
+    },
   },
 
   Mutation: {
@@ -100,8 +110,20 @@ const resolvers = {
     ) => {
       const user = getUserFromToken(context)
       // Allow anonymous reporting - user ID will be null if not logged in
+      
+      // Fetch recent reports for context/duplicate detection (last 14 days)
+      const twoWeeksAgo = new Date()
+      twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14)
 
-      const aiResult = await processReport(description, location, city)
+      const recentReports = await Report.find({ 
+        city,
+        createdAt: { $gte: twoWeeksAgo }
+      })
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .select('referenceNumber originalDescription location department severity createdAt')
+      
+      const aiResult = await processReport(description, location, city, recentReports)
       const referenceNumber = generateReferenceNumber(city, description)
 
       const newReport = new Report({
@@ -117,7 +139,8 @@ const resolvers = {
         aiAnalysis: {
           cleanedText: aiResult.cleanedText,
           severity: aiResult.severity,
-          duplicateConfidence: 0,
+          duplicateConfidence: aiResult.duplicateConfidence || 0,
+          possibleDuplicates: aiResult.possibleDuplicates || [],
           thoughts: aiResult.thoughts,
         },
       })

@@ -14,6 +14,7 @@ import {
   Badge,
   Input,
   Divider,
+  Drawer,
 } from 'antd'
 import {
   ReloadOutlined,
@@ -34,6 +35,7 @@ import {
   UPDATE_REPORT_STATUS_MUTATION,
   RESOLVE_REPORT_MUTATION,
   ADD_REPORT_NOTE_MUTATION,
+  GET_REPORT_BY_REFERENCE,
 } from '../graphql/queries'
 import { useTheme } from '../contexts/ThemeContext.jsx'
 
@@ -46,6 +48,7 @@ export default function CouncilDashboard() {
   const [aiReport, setAiReport] = useState(null)
   const [resolutionNotes, setResolutionNotes] = useState('')
   const [noteInput, setNoteInput] = useState('')
+  const [duplicateRef, setDuplicateRef] = useState(null)
   const { cityId } = useParams()
   const navigate = useNavigate()
   const { colors, spacing, borderRadius } = useTheme()
@@ -98,6 +101,89 @@ export default function CouncilDashboard() {
 
   const reports = data?.reports || []
 
+  const { data: duplicateData, loading: duplicateLoading } = useQuery(GET_REPORT_BY_REFERENCE, {
+    variables: { referenceNumber: duplicateRef },
+    skip: !duplicateRef,
+  })
+
+  const duplicate = duplicateData?.reportByReference
+
+  const DuplicateDetailsDrawer = () => (
+    <Drawer
+      title={
+        <Space>
+          <InfoCircleOutlined />
+          <span>Duplicate Details: {duplicateRef}</span>
+        </Space>
+      }
+      placement="right"
+      width={600}
+      onClose={() => setDuplicateRef(null)}
+      open={!!duplicateRef}
+      styles={{
+        body: { background: colors.background },
+        header: { borderBottom: `1px solid ${colors.border}` }
+      }}
+    >
+      {duplicateLoading ? (
+        <div style={{ textAlign: 'center', padding: spacing.xl }}>
+          <ReloadOutlined spin style={{ fontSize: '2rem', color: colors.primary }} />
+          <div style={{ marginTop: spacing.md }}>Fetching details...</div>
+        </div>
+      ) : duplicate ? (
+        <div>
+          <Card
+            size="small"
+            title={<Text strong>Original Report</Text>}
+            style={{ marginBottom: spacing.md, background: colors.surface }}
+          >
+            <Paragraph>{duplicate.originalDescription}</Paragraph>
+            <Text type="secondary">📍 {duplicate.location}</Text>
+          </Card>
+
+          <Card
+            size="small"
+            title={<Text strong>AI Status</Text>}
+            style={{ marginBottom: spacing.md, background: colors.surface }}
+          >
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Text strong>Status:</Text>
+                <Tag color={getStatusConfig(duplicate.status).color}>{duplicate.status}</Tag>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Text strong>Department:</Text>
+                <Tag color={colors.primary}>{duplicate.department}</Tag>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Text strong>Severity:</Text>
+                <Tag color={colors.error}>{duplicate.aiAnalysis?.severity}</Tag>
+              </div>
+            </Space>
+          </Card>
+
+          {duplicate.status === 'resolved' && duplicate.resolution?.timestamp && (
+            <Card
+              size="small"
+              title={<Text strong>Resolution</Text>}
+              style={{ background: `${colors.success}10`, borderColor: colors.success + '40', marginTop: spacing.md }}
+            >
+              <Paragraph style={{ marginBottom: spacing.xs }}>{duplicate.resolution.notes || 'No resolution notes provided.'}</Paragraph>
+              <Text type="secondary" style={{ fontSize: '0.8rem' }}>
+                Resolved on {new Date(duplicate.resolution.timestamp).toLocaleDateString()}
+              </Text>
+            </Card>
+          )}
+
+          <Divider />
+          <Button block onClick={() => setDuplicateRef(null)}>Close Drawer</Button>
+        </div>
+      ) : (
+        <Empty description="Report details not found" />
+      )}
+    </Drawer>
+  )
+
   const handleStatusUpdate = (id, newStatus, department) => {
     updateReportStatus({ variables: { id, status: newStatus, department } })
   }
@@ -124,38 +210,76 @@ export default function CouncilDashboard() {
           color: colors.success,
           icon: <CheckCircleOutlined />,
           bg: `${colors.success}10`,
+          label: 'Resolved'
+        }
+      case 'in-progress':
+        return {
+          color: colors.warning,
+          icon: <ClockCircleOutlined />,
+          bg: `${colors.warning}10`,
+          label: 'In Progress'
         }
       case 'assigned':
         return {
           color: colors.primary,
-          icon: <ClockCircleOutlined />,
+          icon: <SafetyOutlined />,
           bg: `${colors.primary}10`,
+          label: 'Assigned'
         }
+      case 'cancelled':
+        return {
+          color: colors.error,
+          icon: <CheckCircleOutlined />, // or something else
+          bg: `${colors.error}10`,
+          label: 'Cancelled'
+        }
+      case 'submitted':
       default:
         return {
           color: colors.textSecondary,
           icon: <ClockCircleOutlined />,
           bg: 'transparent',
+          label: 'Submitted'
         }
     }
   }
 
-  const KanbanColumn = ({ title, status, items }) => {
+  const KanbanColumn = ({ title, status, items, isLast }) => {
     const statusConfig = getStatusConfig(status)
 
     return (
-      <Col span={6}>
+      <Col style={{ width: '320px', flex: '0 0 320px', position: 'relative', padding: `0 ${spacing.md}` }}>
+        {!isLast && (
+          <div
+            style={{
+              position: 'absolute',
+              right: 0,
+              top: '2%',
+              bottom: '2%',
+              width: '1px',
+              background: colors.border,
+              opacity: 0.8
+            }}
+          />
+        )}
         <Card
           title={
-            <Space>
-              <Badge
-                color={statusConfig.color}
-                text={title}
-                count={items.length}
-                style={{ fontSize: '0.9rem' }}
-              />
-            </Space>
+            <div style={{ padding: '8px 0' }}>
+              <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: statusConfig.color }} />
+                  <Text strong style={{ fontSize: '1rem', color: colors.text }}>{title}</Text>
+                  <Badge
+                    count={items.length}
+                    showZero
+                    color={items.length > 0 ? colors.primary : colors.border}
+                    style={{ backgroundColor: items.length > 0 ? colors.primary : 'transparent', color: items.length > 0 ? '#fff' : colors.textSecondary, boxShadow: 'none', border: `1px solid ${colors.border}` }}
+                  />
+                </div>
+              </Space>
+            </div>
           }
+          headStyle={{ borderBottom: `2px solid ${statusConfig.color}40`, padding: `0 ${spacing.md}` }}
           style={{
             background: colors.surface,
             border: `1px solid ${colors.border}`,
@@ -349,29 +473,47 @@ export default function CouncilDashboard() {
           </Button>
         </Space>
       </Header>
-      <Content style={{ padding: spacing.lg }}>
-        <Row gutter={spacing.lg}>
-          <KanbanColumn
-            title="Submitted"
-            status="submitted"
-            items={reports.filter(r => r.status === 'submitted')}
-          />
-          <KanbanColumn
-            title="In Review"
-            status="in-review"
-            items={reports.filter(r => r.status === 'in-review')}
-          />
-          <KanbanColumn
-            title="Assigned"
-            status="assigned"
-            items={reports.filter(r => r.status === 'assigned')}
-          />
-          <KanbanColumn
-            title="Resolved"
-            status="resolved"
-            items={reports.filter(r => r.status === 'resolved')}
-          />
-        </Row>
+      <Content style={{ padding: spacing.lg, overflowY: 'hidden' }}>
+        <div style={{
+          overflowX: 'auto',
+          height: 'calc(100vh - 140px)',
+          paddingBottom: spacing.md,
+          display: 'flex'
+        }}>
+          <Row gutter={0} wrap={false} style={{ flex: 1 }}>
+            <KanbanColumn
+              title="Submitted"
+              status="submitted"
+              items={reports.filter(r => r.status === 'submitted')}
+            />
+            <KanbanColumn
+              title="In Review"
+              status="in-review"
+              items={reports.filter(r => r.status === 'in-review')}
+            />
+            <KanbanColumn
+              title="Assigned"
+              status="assigned"
+              items={reports.filter(r => r.status === 'assigned')}
+            />
+            <KanbanColumn
+              title="In Progress"
+              status="in-progress"
+              items={reports.filter(r => r.status === 'in-progress')}
+            />
+            <KanbanColumn
+              title="Resolved"
+              status="resolved"
+              items={reports.filter(r => r.status === 'resolved')}
+            />
+            <KanbanColumn
+              title="Cancelled"
+              status="cancelled"
+              items={reports.filter(r => r.status === 'cancelled')}
+              isLast
+            />
+          </Row>
+        </div>
       </Content>
 
       <Modal
@@ -388,8 +530,21 @@ export default function CouncilDashboard() {
           setNoteInput('')
         }}
         footer={
-          selectedReport?.status === 'resolved' ? null : (
+          selectedReport?.status === 'resolved' || selectedReport?.status === 'cancelled' ? null : (
             <Space>
+              <Button
+                danger
+                onClick={() =>
+                  handleStatusUpdate(
+                    selectedReport.id,
+                    'cancelled',
+                    selectedReport.department
+                  )
+                }
+                style={{ borderRadius: borderRadius.md }}
+              >
+                Cancel Report
+              </Button>
               {selectedReport?.status === 'submitted' && (
                 <Button
                   onClick={() =>
@@ -419,6 +574,20 @@ export default function CouncilDashboard() {
                 </Button>
               )}
               {selectedReport?.status === 'assigned' && (
+                <Button
+                  onClick={() =>
+                    handleStatusUpdate(
+                      selectedReport.id,
+                      'in-progress',
+                      selectedReport.department
+                    )
+                  }
+                  style={{ borderRadius: borderRadius.md }}
+                >
+                  Move to Progress
+                </Button>
+              )}
+              {selectedReport?.status === 'in-progress' && (
                 <Button
                   type="primary"
                   onClick={() => setResolutionNotes(prev => prev || '')}
@@ -780,9 +949,30 @@ export default function CouncilDashboard() {
                 >
                   <Text strong>Duplicate Confidence:</Text>
                   <Text style={{ color: colors.textSecondary }}>
-                    {aiReport.aiAnalysis?.duplicateConfidence || 0}%
+                    {Math.round((aiReport.aiAnalysis?.duplicateConfidence || 0) * 100)}%
                   </Text>
                 </div>
+                {aiReport.aiAnalysis?.possibleDuplicates?.length > 0 && (
+                  <div
+                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}
+                  >
+                    <Text strong>Possible Duplicates:</Text>
+                    <div style={{ textAlign: 'right' }}>
+                      {aiReport.aiAnalysis.possibleDuplicates.map(ref => (
+                        <div key={ref}>
+                          <Button
+                            type="link"
+                            size="small"
+                            onClick={() => setDuplicateRef(ref)}
+                            style={{ padding: 0 }}
+                          >
+                            <Text code style={{ fontSize: '0.8rem', color: colors.primary }}>{ref}</Text>
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </Space>
             </Card>
 
@@ -838,6 +1028,7 @@ export default function CouncilDashboard() {
           </div>
         )}
       </Modal>
+      <DuplicateDetailsDrawer />
     </Layout >
   )
 }

@@ -20,6 +20,7 @@ const typeDefs = `
     cleanedText: String
     severity: String
     duplicateConfidence: Float
+    possibleDuplicates: [String]
     thoughts: String
   }
 
@@ -62,6 +63,7 @@ const typeDefs = `
     me: User
     reports(city: String, userId: ID): [Report!]!
     report(id: ID!): Report
+    reportByReference(referenceNumber: String!): Report
   }
 
   type Mutation {
