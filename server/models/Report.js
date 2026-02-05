@@ -18,10 +18,15 @@ const ReportSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['submitted', 'in-review', 'assigned', 'resolved'],
+      enum: ['submitted', 'in-review', 'assigned', 'in-progress', 'resolved', 'cancelled'],
       default: 'submitted',
     },
     department: { type: String, default: 'Unassigned' },
+    assignedAt: Date,
+    startedAt: Date,
+    eta: Date,
+    assignedNotes: String,
+    progressNotes: String,
     aiAnalysis: {
       cleanedText: String,
       severity: String,

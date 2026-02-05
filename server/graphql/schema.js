@@ -41,6 +41,11 @@ const typeDefs = `
     createdBy: User
     status: String!
     department: String!
+    assignedAt: String
+    startedAt: String
+    eta: String
+    assignedNotes: String
+    progressNotes: String
     aiAnalysis: AIAnalysis
     resolution: Resolution
     notes: [Note]
@@ -76,7 +81,13 @@ const typeDefs = `
       civilianContact: CivilianContactInput
       images: [String]
     ): Report!
-    updateReportStatus(id: ID!, status: String!, department: String): Report!
+    updateReportStatus(
+      id: ID!
+      status: String!
+      department: String
+      notes: String
+      eta: String
+    ): Report!
     resolveReport(id: ID!, notes: String!): Report!
     addReportNote(reportId: ID!, text: String!): Report!
   }

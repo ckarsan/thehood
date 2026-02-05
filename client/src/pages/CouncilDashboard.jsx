@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Layout,
   Typography,
@@ -49,10 +49,19 @@ export default function CouncilDashboard() {
   const [resolutionNotes, setResolutionNotes] = useState('')
   const [noteInput, setNoteInput] = useState('')
   const [duplicateRef, setDuplicateRef] = useState(null)
+  const [workflowNotes, setWorkflowNotes] = useState('')
+  const [workflowDepartment, setWorkflowDepartment] = useState('')
+  const [workflowEta, setWorkflowEta] = useState('')
   const { cityId } = useParams()
   const navigate = useNavigate()
   const { colors, spacing, borderRadius } = useTheme()
   const cityName = cityId?.charAt(0).toUpperCase() + cityId.slice(1)
+
+  useEffect(() => {
+    if (selectedReport?.status === 'in-review') {
+      setWorkflowDepartment(selectedReport.department)
+    }
+  }, [selectedReport])
 
   // Redirect if not council
   const user = JSON.parse(localStorage.getItem('user') || '{}')
@@ -184,8 +193,23 @@ export default function CouncilDashboard() {
     </Drawer>
   )
 
-  const handleStatusUpdate = (id, newStatus, department) => {
-    updateReportStatus({ variables: { id, status: newStatus, department } })
+  const handleStatusUpdate = (id, newStatus, department, notes, eta) => {
+    updateReportStatus({
+      variables: {
+        id,
+        status: newStatus,
+        department: department || workflowDepartment,
+        notes: notes || workflowNotes,
+        eta: eta || workflowEta
+      }
+    })
+    resetWorkflowState()
+  }
+
+  const resetWorkflowState = () => {
+    setWorkflowNotes('')
+    setWorkflowDepartment('')
+    setWorkflowEta('')
   }
 
   const handleResolve = () => {
@@ -400,6 +424,11 @@ export default function CouncilDashboard() {
           >
             <span>📍 {report.location}</span>
             {report.createdBy && <span>👤 {report.createdBy.name}</span>}
+            {report.eta && report.status === 'in-progress' && (
+              <Tag size="small" color="warning" icon={<ClockCircleOutlined />} style={{ fontSize: '0.75rem' }}>
+                ETA: {new Date(report.eta).toLocaleDateString()}
+              </Tag>
+            )}
           </Space>
 
           <Space style={{ marginTop: spacing.sm }}>
@@ -528,6 +557,7 @@ export default function CouncilDashboard() {
           setSelectedReport(null)
           setResolutionNotes('')
           setNoteInput('')
+          resetWorkflowState()
         }}
         footer={
           selectedReport?.status === 'resolved' || selectedReport?.status === 'cancelled' ? null : (
@@ -547,6 +577,7 @@ export default function CouncilDashboard() {
               </Button>
               {selectedReport?.status === 'submitted' && (
                 <Button
+                  type="primary"
                   onClick={() =>
                     handleStatusUpdate(
                       selectedReport.id,
@@ -556,35 +587,42 @@ export default function CouncilDashboard() {
                   }
                   style={{ borderRadius: borderRadius.md }}
                 >
-                  Review
+                  Start Review
                 </Button>
               )}
               {selectedReport?.status === 'in-review' && (
                 <Button
+                  type="primary"
+                  disabled={!workflowDepartment}
                   onClick={() =>
                     handleStatusUpdate(
                       selectedReport.id,
                       'assigned',
-                      selectedReport.department
+                      workflowDepartment,
+                      workflowNotes
                     )
                   }
                   style={{ borderRadius: borderRadius.md }}
                 >
-                  Assign
+                  Confirm & Assign
                 </Button>
               )}
               {selectedReport?.status === 'assigned' && (
                 <Button
+                  type="primary"
+                  disabled={!workflowEta || !workflowNotes}
                   onClick={() =>
                     handleStatusUpdate(
                       selectedReport.id,
                       'in-progress',
-                      selectedReport.department
+                      selectedReport.department,
+                      workflowNotes,
+                      workflowEta
                     )
                   }
                   style={{ borderRadius: borderRadius.md }}
                 >
-                  Move to Progress
+                  Start Work (In Progress)
                 </Button>
               )}
               {selectedReport?.status === 'in-progress' && (
@@ -596,7 +634,7 @@ export default function CouncilDashboard() {
                     background: colors.primary,
                   }}
                 >
-                  Complete
+                  Complete & Resolve
                 </Button>
               )}
             </Space>
@@ -633,6 +671,96 @@ export default function CouncilDashboard() {
                 </Text>
               </div>
             </div>
+
+            {/* Workflow Inputs Section */}
+            {(selectedReport.status === 'in-review' || selectedReport.status === 'assigned') && (
+              <Card
+                size="small"
+                title={<Text strong>{selectedReport.status === 'in-review' ? 'Review Phase' : 'Assignment Phase'}</Text>}
+                style={{ marginBottom: spacing.lg, background: `${colors.primary}05`, borderColor: `${colors.primary}20` }}
+              >
+                <Space direction="vertical" style={{ width: '100%' }} size={spacing.md}>
+                  {selectedReport.status === 'in-review' && (
+                    <div>
+                      <Text strong style={{ fontSize: '0.85rem' }}>Assign Department</Text>
+                      <Input
+                        placeholder="e.g. Roads, Public Safety..."
+                        value={workflowDepartment}
+                        onChange={e => setWorkflowDepartment(e.target.value)}
+                        style={{ marginTop: spacing.xs }}
+                      />
+                      <Text type="secondary" style={{ fontSize: '0.75rem' }}>
+                        AI suggested: <Tag size="small">{selectedReport.department}</Tag>
+                      </Text>
+                    </div>
+                  )}
+
+                  {selectedReport.status === 'assigned' && (
+                    <div>
+                      <Text strong style={{ fontSize: '0.85rem' }}>Scheduled Completion (ETA)</Text>
+                      <Input
+                        type="date"
+                        value={workflowEta}
+                        onChange={e => setWorkflowEta(e.target.value)}
+                        style={{ marginTop: spacing.xs }}
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <Text strong style={{ fontSize: '0.85rem' }}>{selectedReport.status === 'in-review' ? 'Review Notes' : 'Assignment/Work Notes'}</Text>
+                    <TextArea
+                      rows={3}
+                      placeholder="Add internal notes for this stage..."
+                      value={workflowNotes}
+                      onChange={e => setWorkflowNotes(e.target.value)}
+                      style={{ marginTop: spacing.xs }}
+                    />
+                  </div>
+                </Space>
+              </Card>
+            )}
+
+            {(selectedReport.assignedAt || selectedReport.startedAt || selectedReport.eta) && (
+              <div style={{ marginBottom: spacing.lg }}>
+                <Divider orientation="left" style={{ margin: `${spacing.md} 0` }}>
+                  <Text type="secondary" style={{ fontSize: '0.8rem' }}>LIFECYCLE HISTORY</Text>
+                </Divider>
+                <Row gutter={[spacing.md, spacing.md]}>
+                  {selectedReport.assignedAt && (
+                    <Col span={12}>
+                      <Card size="small" title={<Text strong>Assigned</Text>} style={{ height: '100%', background: `${colors.primary}05` }}>
+                        <Text type="secondary" style={{ fontSize: '0.8rem' }}>{new Date(selectedReport.assignedAt).toLocaleDateString()}</Text>
+                        {selectedReport.assignedNotes && (
+                          <Paragraph style={{ marginTop: spacing.xs, fontSize: '0.85rem' }}>
+                            {selectedReport.assignedNotes}
+                          </Paragraph>
+                        )}
+                      </Card>
+                    </Col>
+                  )}
+                  {selectedReport.startedAt && (
+                    <Col span={12}>
+                      <Card size="small" title={<Text strong>Started Work</Text>} style={{ height: '100%', background: `${colors.warning}05` }}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <Text type="secondary" style={{ fontSize: '0.8rem' }}>Started: {new Date(selectedReport.startedAt).toLocaleDateString()}</Text>
+                          {selectedReport.eta && (
+                            <Text strong style={{ fontSize: '0.8rem', color: colors.warning }}>
+                              ETA: {new Date(selectedReport.eta).toLocaleDateString()}
+                            </Text>
+                          )}
+                        </div>
+                        {selectedReport.progressNotes && (
+                          <Paragraph style={{ marginTop: spacing.xs, fontSize: '0.85rem' }}>
+                            {selectedReport.progressNotes}
+                          </Paragraph>
+                        )}
+                      </Card>
+                    </Col>
+                  )}
+                </Row>
+              </div>
+            )}
 
             <Space size={spacing.sm} wrap style={{ marginBottom: spacing.lg }}>
               <Tag

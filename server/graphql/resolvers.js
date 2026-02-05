@@ -149,14 +149,28 @@ const resolvers = {
       return await Report.findById(newReport._id).populate('createdBy')
     },
 
-    updateReportStatus: async (parent, { id, status, department }, context) => {
+    updateReportStatus: async (parent, { id, status, department, notes, eta }, context) => {
       const user = getUserFromToken(context)
       if (!user) throw new Error('Not authenticated')
       if (user.role !== 'council') throw new Error('Not authorized')
 
+      const updateData = { status }
+      if (department) updateData.department = department
+
+      if (status === 'assigned') {
+        updateData.assignedAt = new Date()
+        if (notes) updateData.assignedNotes = notes
+      }
+
+      if (status === 'in-progress') {
+        updateData.startedAt = new Date()
+        if (notes) updateData.progressNotes = notes
+        if (eta) updateData.eta = new Date(eta)
+      }
+
       const report = await Report.findByIdAndUpdate(
         id,
-        { $set: { status, department } },
+        { $set: updateData },
         { new: true }
       )
         .populate('createdBy')

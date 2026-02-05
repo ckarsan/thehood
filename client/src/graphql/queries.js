@@ -70,6 +70,11 @@ export const GET_REPORTS = gql`
       }
       status
       department
+      assignedAt
+      startedAt
+      eta
+      assignedNotes
+      progressNotes
       aiAnalysis {
         cleanedText
         severity
@@ -116,6 +121,11 @@ export const GET_REPORT = gql`
       }
       status
       department
+      assignedAt
+      startedAt
+      eta
+      assignedNotes
+      progressNotes
       aiAnalysis {
         cleanedText
         severity
@@ -174,11 +184,16 @@ export const CREATE_REPORT_MUTATION = gql`
 `
 
 export const UPDATE_REPORT_STATUS_MUTATION = gql`
-  mutation UpdateReportStatus($id: ID!, $status: String!, $department: String) {
-    updateReportStatus(id: $id, status: $status, department: $department) {
+  mutation UpdateReportStatus($id: ID!, $status: String!, $department: String, $notes: String, $eta: String) {
+    updateReportStatus(id: $id, status: $status, department: $department, notes: $notes, eta: $eta) {
       id
       status
       department
+      assignedAt
+      startedAt
+      eta
+      assignedNotes
+      progressNotes
     }
   }
 `
@@ -233,6 +248,11 @@ export const GET_REPORT_BY_REFERENCE = gql`
       }
       status
       department
+      assignedAt
+      startedAt
+      eta
+      assignedNotes
+      progressNotes
       aiAnalysis {
         cleanedText
         severity
